@@ -51,6 +51,8 @@ func NewRoot(a *app.App) *cobra.Command {
 	root.AddCommand(newMapCmd(a))
 	root.AddCommand(newUnlinkCmd(a))
 	root.AddCommand(newCleanupCmd(a))
+	root.AddCommand(newPauseCmd(a))
+	root.AddCommand(newResumeCmd(a))
 
 	return root
 }
