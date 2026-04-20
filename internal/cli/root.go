@@ -35,6 +35,7 @@ func NewRoot(a *app.App) *cobra.Command {
 	}
 
 	root.AddCommand(newVersionCmd(a))
+	root.AddCommand(newSetupCmd(a))
 
 	return root
 }

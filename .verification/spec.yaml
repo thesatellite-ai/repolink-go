@@ -197,7 +197,7 @@ mvp_items:
   - id: MVP-04
     title: "`repolink setup` — register private-repo, create repo.db + repo_meta singleton"
     verified_by: [TestMVP_04_SetupZeroFlag, TestMVP_04_SetupIdempotent]
-    status: draft
+    status: implemented
   - id: MVP-05
     title: "`repolink link <src> [dest]` — one-shot mapping + symlink"
     verified_by: [TestMVP_05_LinkCreatesRowAndSymlink]
