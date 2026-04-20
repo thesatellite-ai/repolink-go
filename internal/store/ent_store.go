@@ -246,6 +246,48 @@ func (s *entStore) UpdateMappingState(ctx context.Context, id, state string) err
 	return nil
 }
 
+// PurgeMapping runs the two-step delete inside one ent transaction:
+//  1. UPDATE run_logs SET mapping_id = NULL WHERE mapping_id = ?
+//  2. DELETE FROM repo_mappings WHERE id = ?
+//
+// Refuses rows whose state != "trashed" (ErrNotFound if id doesn't exist;
+// a generic error otherwise — caller is expected to have already checked
+// state, but we defensively re-check).
+func (s *entStore) PurgeMapping(ctx context.Context, id string) error {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	// Fetch state for safety re-check.
+	m, err := tx.RepoMapping.Get(ctx, id)
+	if err != nil {
+		_ = tx.Rollback()
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("get mapping %s: %w", id, err)
+	}
+	if string(m.State) != "trashed" {
+		_ = tx.Rollback()
+		return fmt.Errorf("refusing to purge %s: state=%s (must be trashed)", id, m.State)
+	}
+
+	// Null out run_logs.mapping_id references.
+	if _, err := tx.RunLog.Update().
+		Where(mappingIDEq(id)).
+		ClearMappingID().
+		Save(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("null run_logs.mapping_id: %w", err)
+	}
+
+	if err := tx.RepoMapping.DeleteOneID(id).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete mapping %s: %w", id, err)
+	}
+	return tx.Commit()
+}
+
 // isUniqueConstraint detects SQLite's "UNIQUE constraint failed" error
 // shape bubbling up through ent. String match is unfortunate but SQLite
 // doesn't expose a stable error code the way Postgres does.

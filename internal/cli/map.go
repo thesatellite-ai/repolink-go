@@ -22,6 +22,7 @@ func newMapCmd(a *app.App) *cobra.Command {
 		Short: "Global mapping management (list / add / remove / restore / purge / mv)",
 	}
 	m.AddCommand(newMapListCmd(a))
+	m.AddCommand(newMapPurgeCmd(a))
 	return m
 }
 

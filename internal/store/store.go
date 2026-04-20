@@ -105,6 +105,12 @@ type Store interface {
 	// UpdateMappingState transitions a row between active/paused/trashed.
 	UpdateMappingState(ctx context.Context, id, state string) error
 
+	// PurgeMapping hard-deletes one trashed mapping row. Within a single
+	// transaction, first nulls run_logs.mapping_id for rows pointing at this
+	// mapping (preserving the audit trail), then deletes the mapping itself.
+	// Refuses rows whose state != "trashed" — caller must unlink first.
+	PurgeMapping(ctx context.Context, id string) error
+
 	// LogRun appends one run_logs row.
 	LogRun(ctx context.Context, in NewRun) error
 }
