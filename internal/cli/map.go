@@ -62,14 +62,16 @@ type mapListOpts struct {
 }
 
 type mapListRow struct {
-	ID        string `json:"id"`
-	RepoURL   string `json:"repo_url"`
-	SourceRel string `json:"source_rel"`
-	TargetRel string `json:"target_rel"`
-	LinkName  string `json:"link_name"`
-	Kind      string `json:"kind"`
-	State     string `json:"state"`
-	Notes     string `json:"notes,omitempty"`
+	ID             string `json:"id"`
+	RepoURL        string `json:"repo_url"`
+	SourceRel      string `json:"source_rel"`
+	TargetRel      string `json:"target_rel"`
+	LinkName       string `json:"link_name"`
+	Kind           string `json:"kind"`
+	State          string `json:"state"`
+	Notes          string `json:"notes,omitempty"`
+	CreatedByEmail string `json:"created_by_email,omitempty"`
+	CreatedByName  string `json:"created_by_name,omitempty"`
 }
 
 type mapListResult struct {
@@ -125,6 +127,8 @@ func runMapList(ctx context.Context, a *app.App, opts mapListOpts) error {
 			ID: m.ID, RepoURL: m.RepoURL, SourceRel: m.SourceRel,
 			TargetRel: m.TargetRel, LinkName: m.LinkName, Kind: m.Kind,
 			State: m.State, Notes: m.Notes,
+			CreatedByEmail: m.CreatedByEmail,
+			CreatedByName:  m.CreatedByName,
 		})
 	}
 	sort.SliceStable(rows, func(i, j int) bool {

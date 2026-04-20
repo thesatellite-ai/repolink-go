@@ -36,6 +36,7 @@ func newConfigCmd(a *app.App) *cobra.Command {
 		addProfileDir  string
 		addScanRoot    string
 		removeScanRoot string
+		renameProfile  []string
 	)
 
 	cmd := &cobra.Command{
@@ -71,6 +72,7 @@ Usage patterns:
 				AddProfileDir:  addProfileDir,
 				AddScanRoot:    addScanRoot,
 				RemoveScanRoot: removeScanRoot,
+				RenameProfile:  renameProfile,
 			})
 		},
 	}
@@ -82,6 +84,7 @@ Usage patterns:
 	cmd.Flags().StringVar(&addProfileDir, "dir", "", "dir for --add-profile")
 	cmd.Flags().StringVar(&addScanRoot, "add-scan-root", "", "append to active profile's scan_roots")
 	cmd.Flags().StringVar(&removeScanRoot, "remove-scan-root", "", "remove from active profile's scan_roots")
+	cmd.Flags().StringSliceVar(&renameProfile, "rename-profile", nil, "rename a profile: --rename-profile <old>,<new>")
 	return cmd
 }
 
@@ -95,6 +98,7 @@ type configOpts struct {
 	AddProfileDir  string
 	AddScanRoot    string
 	RemoveScanRoot string
+	RenameProfile  []string
 }
 
 // Tag which mutually-exclusive mode is active so we can route.
@@ -114,6 +118,8 @@ func (o configOpts) mode() string {
 		return "add_scan_root"
 	case o.RemoveScanRoot != "":
 		return "remove_scan_root"
+	case len(o.RenameProfile) == 2:
+		return "rename_profile"
 	}
 	return "show"
 }
@@ -185,6 +191,15 @@ func runConfig(ctx context.Context, a *app.App, opts configOpts) error {
 			return err
 		}
 		return renderConfigOK(a, "removed scan_root: "+opts.RemoveScanRoot)
+	case "rename_profile":
+		old, new_ := opts.RenameProfile[0], opts.RenameProfile[1]
+		if err := cfg.RenameProfile(old, new_); err != nil {
+			return err
+		}
+		if err := cfg.WriteFile(); err != nil {
+			return err
+		}
+		return renderConfigOK(a, fmt.Sprintf("renamed %q → %q", old, new_))
 	}
 	return nil
 }

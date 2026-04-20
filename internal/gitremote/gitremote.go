@@ -201,3 +201,100 @@ func ResolveFromCWD(start string) (string, string, error) {
 	}
 	return root, url, nil
 }
+
+// Identity is the git `user.email` / `user.name` pair stamped onto
+// mapping audit fields (created_by_*, updated_by_*) and run_logs.
+type Identity struct {
+	Email string
+	Name  string
+}
+
+// ReadIdentity resolves the git identity using git's own precedence:
+//  1. <repoRoot>/.git/config  [user] section
+//  2. $XDG_CONFIG_HOME/git/config
+//  3. ~/.gitconfig
+//
+// Returns the first section that supplies both email and name, falling
+// back gracefully when only one is set. If neither source defines a
+// value the returned Identity has empty fields — callers can choose
+// whether an empty stamp is fatal (link/sync usually aren't, meta
+// rename can tolerate it).
+func ReadIdentity(repoRoot string) (Identity, error) {
+	var id Identity
+
+	// Per-repo config (highest precedence).
+	if repoRoot != "" {
+		if gitDir, err := gitDirOf(repoRoot); err == nil {
+			id = mergeIdentity(id, readUserSection(filepath.Join(gitDir, "config")))
+		}
+	}
+	if id.Email != "" && id.Name != "" {
+		return id, nil
+	}
+
+	// $XDG_CONFIG_HOME/git/config (git's modern location).
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		id = mergeIdentity(id, readUserSection(filepath.Join(xdg, "git", "config")))
+	}
+	if id.Email != "" && id.Name != "" {
+		return id, nil
+	}
+
+	// ~/.gitconfig (traditional location).
+	if home, err := os.UserHomeDir(); err == nil {
+		id = mergeIdentity(id, readUserSection(filepath.Join(home, ".gitconfig")))
+	}
+	return id, nil
+}
+
+// readUserSection parses one git config file and extracts the `user`
+// section's email + name. Returns a zero Identity if the file is missing
+// or the section is absent — never an error (caller falls through).
+func readUserSection(path string) Identity {
+	f, err := os.Open(path)
+	if err != nil {
+		return Identity{}
+	}
+	defer f.Close()
+
+	var (
+		inUser bool
+		id     Identity
+	)
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			body := strings.TrimSpace(line[1 : len(line)-1])
+			inUser = strings.EqualFold(body, "user")
+			continue
+		}
+		if !inUser {
+			continue
+		}
+		if k, v, ok := splitKV(line); ok {
+			switch strings.ToLower(k) {
+			case "email":
+				id.Email = v
+			case "name":
+				id.Name = v
+			}
+		}
+	}
+	return id
+}
+
+// mergeIdentity fills empty fields in dst from src. Higher-precedence
+// calls happen first, so dst wins when both set a field.
+func mergeIdentity(dst, src Identity) Identity {
+	if dst.Email == "" {
+		dst.Email = src.Email
+	}
+	if dst.Name == "" {
+		dst.Name = src.Name
+	}
+	return dst
+}

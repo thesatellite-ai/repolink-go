@@ -123,6 +123,13 @@ func runSetup(ctx context.Context, a *app.App, opts setupOpts) error {
 		return fmt.Errorf("stat %s: %w", res.DBPath, err)
 	}
 
+	// Ensure <dir>/.gitignore contains SQLite sidecar patterns so WAL/SHM
+	// files don't pollute the committed repo. Idempotent: appends only if
+	// patterns aren't already present.
+	if err := ensureProfileGitignore(dir); err != nil {
+		return fmt.Errorf("write .gitignore: %w", err)
+	}
+
 	st, err := store.OpenDB(ctx, dir)
 	if err != nil {
 		return fmt.Errorf("open repo.db: %w", err)
@@ -222,4 +229,67 @@ func ifElse(cond bool, a, b string) string {
 		return a
 	}
 	return b
+}
+
+// ensureProfileGitignore appends the SQLite sidecar patterns (repo.db-wal,
+// repo.db-shm) to <dir>/.gitignore if not already present. Creates the
+// file if missing. Idempotent.
+func ensureProfileGitignore(dir string) error {
+	path := filepath.Join(dir, ".gitignore")
+	want := []string{"repo.db-wal", "repo.db-shm"}
+
+	var existing []byte
+	if data, err := os.ReadFile(path); err == nil {
+		existing = data
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	var missing []string
+	for _, pat := range want {
+		if !containsLine(existing, pat) {
+			missing = append(missing, pat)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if len(existing) > 0 && existing[len(existing)-1] != '\n' {
+		if _, err := f.WriteString("\n"); err != nil {
+			return err
+		}
+	}
+	if len(existing) == 0 {
+		if _, err := f.WriteString("# repolink SQLite sidecar files\n"); err != nil {
+			return err
+		}
+	}
+	for _, pat := range missing {
+		if _, err := f.WriteString(pat + "\n"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// containsLine returns true if body contains `line` as a complete line
+// (not a substring of some longer word). Cheap byte scan.
+func containsLine(body []byte, line string) bool {
+	start := 0
+	for i := 0; i <= len(body); i++ {
+		if i == len(body) || body[i] == '\n' {
+			if string(body[start:i]) == line {
+				return true
+			}
+			start = i + 1
+		}
+	}
+	return false
 }

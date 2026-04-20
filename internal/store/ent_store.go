@@ -185,6 +185,12 @@ func (s *entStore) CreateMapping(ctx context.Context, in NewMapping) (Mapping, e
 	if in.Notes != "" {
 		create = create.SetNotes(in.Notes)
 	}
+	if in.CreatedByEmail != "" {
+		create = create.SetCreatedByEmail(in.CreatedByEmail)
+	}
+	if in.CreatedByName != "" {
+		create = create.SetCreatedByName(in.CreatedByName)
+	}
 	row, err := create.Save(ctx)
 	if err != nil {
 		if isUniqueConstraint(err) {

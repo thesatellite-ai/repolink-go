@@ -30,7 +30,10 @@ import (
 // Atomic: inserts DB row first, then creates fs symlink. If the symlink
 // step fails, the DB row is deleted (soft rollback via hard delete).
 func newLinkCmd(a *app.App) *cobra.Command {
-	var notes string
+	var (
+		notes string
+		force bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "link <src> [dest]",
@@ -45,10 +48,12 @@ func newLinkCmd(a *app.App) *cobra.Command {
 				Src:   args[0],
 				Dest:  dest,
 				Notes: notes,
+				Force: force,
 			})
 		},
 	}
 	cmd.Flags().StringVar(&notes, "note", "", "optional free-form note stored on the mapping")
+	cmd.Flags().BoolVar(&force, "force", false, "clobber existing non-symlink FILE at target (refuses directories)")
 	return cmd
 }
 
@@ -56,6 +61,7 @@ type linkOpts struct {
 	Src   string
 	Dest  string
 	Notes string
+	Force bool
 }
 
 type linkResult struct {
@@ -141,21 +147,41 @@ func runLink(ctx context.Context, a *app.App, opts linkOpts) error {
 		// Already correct on disk. Make sure DB agrees; if missing, insert.
 	case symlinker.ActCreate:
 	case symlinker.ActCollision:
-		return fmt.Errorf("collision at %s: %s", targetAbs, plan.Actions[0].Reason)
+		// Spec S-07: `--force` allows clobbering a real file, NEVER a dir.
+		if opts.Force {
+			if info, err := os.Lstat(targetAbs); err == nil && info.Mode().IsRegular() {
+				if err := os.Remove(targetAbs); err != nil {
+					return fmt.Errorf("--force: remove %s: %w", targetAbs, err)
+				}
+				// Re-compute now that target is clear.
+				plan = symlinker.Compute([]symlinker.Intent{{
+					SourceAbs: sourceAbs, TargetAbs: targetAbs, Kind: kind,
+				}})
+			} else {
+				return fmt.Errorf("collision at %s: --force only clobbers regular files, not %s", targetAbs, plan.Actions[0].Reason)
+			}
+		} else {
+			return fmt.Errorf("collision at %s: %s (use --force to clobber a real file)", targetAbs, plan.Actions[0].Reason)
+		}
 	case symlinker.ActReplace:
 		return fmt.Errorf("target %s points elsewhere: %s (use `repolink unlink` then `link`)", targetAbs, plan.Actions[0].Reason)
 	case symlinker.ActSourceMissing:
 		return fmt.Errorf("source missing: %s", sourceAbs)
 	}
 
+	// Audit identity (best-effort — missing user.email/name is not fatal).
+	ident, _ := gitremote.ReadIdentity(repoRoot)
+
 	// ------ Apply ------
 	mapping, err := st.CreateMapping(ctx, store.NewMapping{
-		SourceRel: sourceRel,
-		RepoURL:   repoURL,
-		TargetRel: targetRel,
-		LinkName:  linkName,
-		Kind:      kind,
-		Notes:     opts.Notes,
+		SourceRel:      sourceRel,
+		RepoURL:        repoURL,
+		TargetRel:      targetRel,
+		LinkName:       linkName,
+		Kind:           kind,
+		Notes:          opts.Notes,
+		CreatedByEmail: ident.Email,
+		CreatedByName:  ident.Name,
 	})
 	if err != nil {
 		if errors.Is(err, store.ErrCollision) {

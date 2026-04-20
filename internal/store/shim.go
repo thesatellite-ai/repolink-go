@@ -29,16 +29,20 @@ func toProfile(r *ent.Profile) Profile {
 
 func toMapping(r *ent.RepoMapping) Mapping {
 	return Mapping{
-		ID:        r.ID,
-		SourceRel: r.SourceRel,
-		RepoURL:   r.RepoURL,
-		TargetRel: r.TargetRel,
-		LinkName:  r.LinkName,
-		Kind:      string(r.Kind),
-		State:     string(r.State),
-		Notes:     r.Notes,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
+		ID:             r.ID,
+		SourceRel:      r.SourceRel,
+		RepoURL:        r.RepoURL,
+		TargetRel:      r.TargetRel,
+		LinkName:       r.LinkName,
+		Kind:           string(r.Kind),
+		State:          string(r.State),
+		Notes:          r.Notes,
+		CreatedByEmail: r.CreatedByEmail,
+		CreatedByName:  r.CreatedByName,
+		UpdatedByEmail: r.UpdatedByEmail,
+		UpdatedByName:  r.UpdatedByName,
+		CreatedAt:      r.CreatedAt,
+		UpdatedAt:      r.UpdatedAt,
 	}
 }
 

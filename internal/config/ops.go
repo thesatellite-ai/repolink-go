@@ -168,6 +168,52 @@ func (c *Config) RemoveScanRootFrom(profName, path string) error {
 	return c.reparse()
 }
 
+// RenameProfile renames a profile key in-place: adds the new key with the
+// same Profile body, removes the old key, and migrates `default_profile`
+// if it pointed at the old name. Comments outside the `profiles.<old>`
+// block survive; the old block's inner comments are lost (RFC 6902 Patch
+// replaces value trees). New name must not already exist.
+func (c *Config) RenameProfile(oldName, newName string) error {
+	if oldName == "" || newName == "" {
+		return errors.New("rename-profile: empty name")
+	}
+	if oldName == newName {
+		return errors.New("rename-profile: old and new names are identical")
+	}
+	p, ok := c.Profiles[oldName]
+	if !ok {
+		return fmt.Errorf("rename-profile: profile %q does not exist", oldName)
+	}
+	if _, exists := c.Profiles[newName]; exists {
+		return fmt.Errorf("rename-profile: profile %q already exists", newName)
+	}
+
+	v, err := hujson.Parse(c.raw)
+	if err != nil {
+		return err
+	}
+	body, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	// Build one patch document that adds new, removes old, and (if
+	// applicable) rewrites default_profile — applied atomically.
+	ops := []string{
+		fmt.Sprintf(`{"op":"add","path":"/profiles/%s","value":%s}`, jsonPointerEscape(newName), body),
+		fmt.Sprintf(`{"op":"remove","path":"/profiles/%s"}`, jsonPointerEscape(oldName)),
+	}
+	if c.DefaultProfile == oldName {
+		ops = append(ops, fmt.Sprintf(`{"op":"replace","path":"/default_profile","value":%q}`, newName))
+	}
+	patch := "[" + strings.Join(ops, ",") + "]"
+	if err := v.Patch([]byte(patch)); err != nil {
+		return fmt.Errorf("patch rename: %w", err)
+	}
+	c.raw = v.Pack()
+	return c.reparse()
+}
+
 // replaceProfile rewrites a single profiles/<name> entry via hujson.Patch.
 func (c *Config) replaceProfile(name string, p Profile) error {
 	v, err := hujson.Parse(c.raw)

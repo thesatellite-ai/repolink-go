@@ -32,26 +32,32 @@ type Profile struct {
 
 // Mapping is one private-repo → consumer symlink intention.
 type Mapping struct {
-	ID         string
-	SourceRel  string
-	RepoURL    string
-	TargetRel  string
-	LinkName   string
-	Kind       string // "dir" | "file"
-	State      string // "active" | "paused" | "trashed"
-	Notes      string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID             string
+	SourceRel      string
+	RepoURL        string
+	TargetRel      string
+	LinkName       string
+	Kind           string // "dir" | "file"
+	State          string // "active" | "paused" | "trashed"
+	Notes          string
+	CreatedByEmail string
+	CreatedByName  string
+	UpdatedByEmail string
+	UpdatedByName  string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // NewMapping is the input to CreateMapping.
 type NewMapping struct {
-	SourceRel string
-	RepoURL   string
-	TargetRel string
-	LinkName  string
-	Kind      string
-	Notes     string
+	SourceRel      string
+	RepoURL        string
+	TargetRel      string
+	LinkName       string
+	Kind           string
+	Notes          string
+	CreatedByEmail string
+	CreatedByName  string
 }
 
 // MappingFilter narrows ListMappings. Zero-value = "all states, all repos".
