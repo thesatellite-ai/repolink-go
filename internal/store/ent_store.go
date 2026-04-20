@@ -246,6 +246,28 @@ func (s *entStore) UpdateMappingState(ctx context.Context, id, state string) err
 	return nil
 }
 
+// UpdateMappingSources rewrites every mapping's source_rel in one tx.
+// Used by `repolink map mv` for bulk prefix renames; all-or-nothing.
+func (s *entStore) UpdateMappingSources(ctx context.Context, renames []SourceRename) error {
+	if len(renames) == 0 {
+		return nil
+	}
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	for _, r := range renames {
+		if _, err := tx.RepoMapping.UpdateOneID(r.ID).SetSourceRel(r.NewSourceRel).Save(ctx); err != nil {
+			_ = tx.Rollback()
+			if ent.IsNotFound(err) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("update source_rel %s: %w", r.ID, err)
+		}
+	}
+	return tx.Commit()
+}
+
 // PurgeMapping runs the two-step delete inside one ent transaction:
 //  1. UPDATE run_logs SET mapping_id = NULL WHERE mapping_id = ?
 //  2. DELETE FROM repo_mappings WHERE id = ?

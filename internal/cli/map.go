@@ -23,6 +23,7 @@ func newMapCmd(a *app.App) *cobra.Command {
 	}
 	m.AddCommand(newMapListCmd(a))
 	m.AddCommand(newMapPurgeCmd(a))
+	m.AddCommand(newMapMvCmd(a))
 	return m
 }
 

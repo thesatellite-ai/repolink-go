@@ -60,6 +60,12 @@ type MappingFilter struct {
 	States  []string // empty = all
 }
 
+// SourceRename is one mapping's new source_rel, used by UpdateMappingSources.
+type SourceRename struct {
+	ID           string
+	NewSourceRel string
+}
+
 // NewRun is the input to LogRun.
 type NewRun struct {
 	ProfileID string
@@ -110,6 +116,11 @@ type Store interface {
 	// mapping (preserving the audit trail), then deletes the mapping itself.
 	// Refuses rows whose state != "trashed" — caller must unlink first.
 	PurgeMapping(ctx context.Context, id string) error
+
+	// UpdateMappingSources rewrites source_rel on every mapping in one
+	// transaction. Either every row is updated or none are (rollback on
+	// any error). Used by `map mv` for bulk prefix renames.
+	UpdateMappingSources(ctx context.Context, renames []SourceRename) error
 
 	// LogRun appends one run_logs row.
 	LogRun(ctx context.Context, in NewRun) error
