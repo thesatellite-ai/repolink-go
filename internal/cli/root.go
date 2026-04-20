@@ -56,6 +56,7 @@ func NewRoot(a *app.App) *cobra.Command {
 	root.AddCommand(newUnsyncCmd(a))
 	root.AddCommand(newMetaCmd(a))
 	root.AddCommand(newVerifyCmd(a))
+	root.AddCommand(newConfigCmd(a))
 
 	return root
 }

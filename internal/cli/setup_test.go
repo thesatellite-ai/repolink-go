@@ -97,8 +97,13 @@ type testRoot struct {
 	}
 }
 
+// runWith rebuilds the cobra tree per call. Cobra flags persist their
+// last-seen values across invocations on the same *Command instance,
+// which makes --set in one call leak into --get in the next. Building
+// fresh each time sidesteps that class of bug.
 func runWith(r *testRoot, args ...string) error {
 	r.buf.Reset()
+	r.cmd = NewRoot(r.app)
 	r.cmd.SetArgs(args)
 	return r.cmd.ExecuteContext(context.Background())
 }
