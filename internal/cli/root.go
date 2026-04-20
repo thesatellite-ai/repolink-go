@@ -5,6 +5,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/khanakia/repolink-go/internal/app"
@@ -20,6 +22,13 @@ func NewRoot(a *app.App) *cobra.Command {
 		Long:          "repolink manages symlinks from a central private-repo into consuming GitHub repos. See docs/PROBLEM.md.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		// Bare `repolink` (no subcommand, no args) aliases `sync`.
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return fmt.Errorf("unknown args: %v", args)
+			}
+			return runSync(cmd.Context(), a, syncOpts{})
+		},
 	}
 
 	root.PersistentFlags().StringVarP(&a.ProfileOverride, "profile", "p", "", "override default_profile for this command")
@@ -37,6 +46,7 @@ func NewRoot(a *app.App) *cobra.Command {
 	root.AddCommand(newVersionCmd(a))
 	root.AddCommand(newSetupCmd(a))
 	root.AddCommand(newLinkCmd(a))
+	root.AddCommand(newSyncCmd(a))
 
 	return root
 }
