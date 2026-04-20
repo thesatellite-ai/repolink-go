@@ -1,0 +1,225 @@
+# spec.yaml — machine-readable index of claims in docs/PROBLEM.md.
+# Single source of truth for what the doc promises; every claim links to
+# the test(s) that verify it. CI will eventually fail if PROBLEM.md's git
+# hash changes without a matching spec.yaml update.
+#
+# Status values:
+#   draft        — seeded from doc but no verified_by yet
+#   scaffolded   — verified_by named; tests exist with t.Skip
+#   implemented  — tests exist and pass
+#   verified     — reviewed + signed off
+
+version: 1
+source: docs/PROBLEM.md
+last_synced: 2026-04-19   # PROBLEM.md v21 lock date — bump on every doc change
+
+# -----------------------------------------------------------------------------
+# Decisions — numbered by row position in PROBLEM.md "Decisions locked" table.
+# -----------------------------------------------------------------------------
+decisions:
+  - id: D-01
+    section: Decisions locked
+    claim: "CLI binary is named `repolink`"
+    verified_by: [TestDecision_D01_BinaryNamedRepolink]
+    status: scaffolded
+  - id: D-02
+    claim: "DB location: single `repo.db` at the root of private-repo/"
+    verified_by: [TestDecision_D02_DBLivesAtPrivateRepoRoot]
+    status: draft
+  - id: D-03
+    claim: "Local config: `~/.repolink/config.jsonc` parsed via tailscale/hujson"
+    verified_by: [TestMVP_02_Config_LoadPreservesComments]
+    status: implemented
+  - id: D-04
+    claim: "Profiles live in config.jsonc, not DB"
+    verified_by: [TestDecision_D04_ProfilesInConfigNotDB]
+    status: draft
+  - id: D-05
+    claim: "Active profile: default_profile in config; --profile/-p overrides per-command"
+    verified_by: [TestMVP_02_Config_ResolveActive]
+    status: implemented
+  - id: D-16
+    claim: "Symlink kinds: both directory and file from v0.1"
+    verified_by: [TestDecision_D16_BothSymlinkKinds]
+    status: draft
+  - id: D-17
+    claim: "Platform: macOS only for v0.1"
+    verified_by: [TestDecision_D17_MacOSOnlyV01]
+    status: draft
+  - id: D-22
+    claim: "Cleanup age threshold = none; `cleanup` removes trashed symlinks immediately"
+    verified_by: [TestDecision_D22_CleanupRemovesTrashedImmediately]
+    status: draft
+  - id: D-25
+    claim: "Table naming: snake_case plural (repo_mappings, profiles, run_logs); singular for repo_meta singleton"
+    verified_by: [TestMVP_ent_MigrateAndInsert]
+    status: implemented
+  - id: D-37
+    claim: "Primary keys: UUID v7 everywhere (repo_meta, repo_mappings, profiles, run_logs)"
+    verified_by: [TestMVP_ent_MigrateAndInsert]
+    status: implemented
+  - id: D-39
+    claim: "Foreign keys: none. `migrate.WithForeignKeys(false)` always"
+    verified_by: [TestDecision_D39_NoForeignKeysInSchema]
+    status: draft
+
+# -----------------------------------------------------------------------------
+# Safety rules — hard invariants. Violating any = data loss bug.
+# -----------------------------------------------------------------------------
+safety_rules:
+  - id: S-00
+    claim: "repolink never deletes symlink targets — only the symlink file"
+    verified_by:
+      - TestSafety_S00_NeverDeletesSourceDir
+      - TestSafety_S00_RemoveSymlinkRefusesNonSymlink
+    status: draft
+  - id: S-07
+    claim: "sync/link refuse to clobber existing real file; --force required"
+    verified_by:
+      - TestSafety_S07_SyncRefusesClobber
+      - TestSafety_S07_LinkForceOverrides
+    status: draft
+  - id: S-10
+    claim: "cross-DB collision on (repo_url, target_rel, link_name) bails with claimant list"
+    verified_by: [TestError_Collision_CrossProfile]
+    status: draft
+
+# -----------------------------------------------------------------------------
+# Flows — documented end-to-end scenarios.
+# -----------------------------------------------------------------------------
+flows:
+  - id: F-01
+    name: "New-machine bootstrap — UUID pin form"
+    steps:
+      - clone consumer repo with .repolink.jsonc containing UUID pin
+      - clone private-repo
+      - run `repolink setup --dir <private-repo>`
+      - cd <consumer> and run `repolink sync`
+      - assert symlinks created despite profile named differently than original
+    verified_by: [TestE2E_F01_NewMachineBootstrap_UUIDPin]
+    status: draft
+  - id: F-02
+    name: "Multi-source sync (2 private-repos feed 1 consumer repo)"
+    verified_by: [TestE2E_F02_MultiSource_Union]
+    status: draft
+  - id: F-03
+    name: "map mv bulk source rename recovers all mappings"
+    verified_by: [TestE2E_F03_MapMv_ReorgRoundTrip]
+    status: draft
+
+# -----------------------------------------------------------------------------
+# Error codes — stable, append-only. Must never change meaning.
+# -----------------------------------------------------------------------------
+error_codes:
+  - code: COLLISION
+    trigger: "link into a target path already claimed (same DB or cross-DB)"
+    verified_by:
+      - TestError_Collision_SameDB
+      - TestError_Collision_CrossProfile
+    status: draft
+  - code: UUID_AMBIGUOUS
+    trigger: "prefix match resolves to multiple rows"
+    verified_by: [TestError_UuidAmbiguous]
+    status: draft
+  - code: UUID_NOT_FOUND
+    trigger: "prefix match resolves to zero rows"
+    verified_by: [TestError_UuidNotFound]
+    status: draft
+  - code: CONFIG_INVALID
+    trigger: "config.jsonc fails schema validation"
+    verified_by: [TestMVP_02_Config_ValidateRequiresAbsDir]
+    status: implemented
+  - code: PROFILE_UNKNOWN
+    trigger: "--profile / default_profile names a profile not in config"
+    verified_by: [TestMVP_02_Config_ResolveActive]
+    status: implemented
+  - code: SOURCE_MISSING
+    trigger: "mapping's source_rel does not exist inside profile.dir"
+    verified_by: [TestError_SourceMissing]
+    status: draft
+  - code: TARGET_CLOBBER
+    trigger: "symlink placement would overwrite an existing real file"
+    verified_by: [TestError_TargetClobber]
+    status: draft
+  - code: NOT_A_SYMLINK
+    trigger: "cleanup/unsync encounters a non-symlink where a symlink was expected"
+    verified_by: [TestError_NotASymlink]
+    status: draft
+
+# -----------------------------------------------------------------------------
+# Hygiene gates — structural discipline enforced in CI.
+# -----------------------------------------------------------------------------
+hygiene_gates:
+  - id: G1
+    rule: "no direct ent.* imports in internal/cli|tui|mcp"
+    enforced_by: [ci/hygiene.sh:check_no_ent_in_cli]
+    status: draft
+  - id: G2
+    rule: "no fmt.Print* inside internal/cli/cmd_*.go — use renderer"
+    enforced_by: [ci/hygiene.sh:check_no_fmt_print_in_cmd]
+    status: draft
+  - id: G3
+    rule: "mutations follow Compute → Plan → Apply split"
+    enforced_by: [code_review]
+    status: draft
+  - id: G4
+    rule: "no package-level mutable globals outside test files (app.Version is ldflag-stamped, not mutated)"
+    enforced_by: [ci/hygiene.sh:check_no_mutable_globals]
+    status: draft
+  - id: G5
+    rule: "context.Context is first arg on every I/O-touching function"
+    enforced_by: [ci/hygiene.sh:run_contextcheck_linter]
+    status: draft
+
+# -----------------------------------------------------------------------------
+# MVP acceptance items — PROBLEM.md "MVP" section, one per bullet.
+# -----------------------------------------------------------------------------
+mvp_items:
+  - id: MVP-01
+    title: "internal/types package: named types + constructors + validation"
+    verified_by: [TestMVP_01_TypesConstructorsValidate, TestMVP_01_TypesZeroValues]
+    status: implemented
+  - id: MVP-02
+    title: "internal/config: load + validate ~/.repolink/config.jsonc (hujson)"
+    verified_by:
+      - TestMVP_02_Config_LoadPreservesComments
+      - TestMVP_02_Config_ResolveActive
+      - TestMVP_02_Config_NotFound
+      - TestMVP_02_Config_RejectsUnknownFields
+      - TestMVP_02_Config_ValidateRequiresAbsDir
+      - TestMVP_02_Config_ValidateDefaultProfileMustExist
+      - TestMVP_02_Config_ValidateKey_Allowlist
+    status: implemented
+  - id: MVP-03
+    title: "internal/ent: schema (Profile, RepoMapping, RunLog, RepoMeta) + migrations"
+    verified_by: [TestMVP_ent_MigrateAndInsert]
+    status: implemented
+  - id: MVP-04
+    title: "`repolink setup` — register private-repo, create repo.db + repo_meta singleton"
+    verified_by: [TestMVP_04_SetupZeroFlag, TestMVP_04_SetupIdempotent]
+    status: draft
+  - id: MVP-05
+    title: "`repolink link <src> [dest]` — one-shot mapping + symlink"
+    verified_by: [TestMVP_05_LinkCreatesRowAndSymlink]
+    status: draft
+  - id: MVP-06
+    title: "`repolink sync` — auto-detect repo, create missing symlinks, idempotent"
+    verified_by: [TestMVP_06_SyncIdempotent, TestMVP_06_SyncCreatesMissing]
+    status: draft
+  - id: MVP-07
+    title: "`repolink status` / `map list` — read model render"
+    verified_by: [TestMVP_07_StatusShowsMappings]
+    status: draft
+  - id: MVP-08
+    title: "`.repolink.jsonc` resolver — profile / sources[display_name|uuid] pin forms"
+    verified_by: [TestMVP_08_RepolinkJsoncResolver]
+    status: draft
+  - id: MVP-09
+    title: "`repolink unlink <id>` — soft-delete (state=trashed), no fs change"
+    verified_by: [TestMVP_09_UnlinkSoftDeletes]
+    status: draft
+  - id: MVP-10
+    title: "`repolink cleanup` — os.Remove trashed symlinks (never targets)"
+    verified_by: [TestSafety_S00_NeverDeletesSourceDir, TestMVP_10_CleanupRemovesSymlinks]
+    status: draft
+  # MVP-11..26 — append as PROBLEM.md MVP list is extracted.
