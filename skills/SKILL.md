@@ -268,7 +268,7 @@ file if nothing else is in it).
 ```sh
 # Manual drop-in (Claude Code):
 mkdir -p ~/.claude/skills/repolink
-curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/skill/SKILL.md \
+curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/skills/SKILL.md \
   -o ~/.claude/skills/repolink/SKILL.md
 ```
 
