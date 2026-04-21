@@ -61,6 +61,7 @@ func (c *Config) AddProfile(name string, p Profile) error {
 		c.DefaultProfile = name
 	}
 
+	v.Format()
 	c.raw = v.Pack()
 	if c.Profiles == nil {
 		c.Profiles = map[string]Profile{}
@@ -82,6 +83,7 @@ func (c *Config) SetDefaultProfile(name string) error {
 	if err := v.Patch([]byte(patch)); err != nil {
 		return fmt.Errorf("patch default_profile: %w", err)
 	}
+	v.Format()
 	c.raw = v.Pack()
 	c.DefaultProfile = name
 	return nil

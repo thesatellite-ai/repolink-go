@@ -28,13 +28,13 @@ func TestMVP_01_TypesConstructorsValidate(t *testing.T) {
 
 	t.Run("AbsPath", func(t *testing.T) {
 		cases := map[string]bool{
-			"/abs/path":       true,
-			"/":               true,
-			"/a//b/../b":      true,
-			"":                false,
-			"relative/path":   false,
-			"~/home":          false,
-			"./dot":           false,
+			"/abs/path":     true,
+			"/":             true,
+			"/a//b/../b":    true,
+			"":              false,
+			"relative/path": false,
+			"~/home":        false,
+			"./dot":         false,
 		}
 		for in, wantOK := range cases {
 			_, err := NewAbsPath(in)

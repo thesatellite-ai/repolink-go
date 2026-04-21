@@ -40,7 +40,8 @@ func TestMVP_05_LinkCreatesRowAndSymlink(t *testing.T) {
 	privateRepo := filepath.Join(workspace, "pr")
 	consumer := filepath.Join(workspace, "consumer")
 	source := filepath.Join(privateRepo, "markdown-viewer")
-	for _, d := range []string{privateRepo, consumer, source} {
+	researchDir := filepath.Join(consumer, "research") // pre-existing dir triggers ln -s dir-semantics
+	for _, d := range []string{privateRepo, consumer, source, researchDir} {
 		if err := os.MkdirAll(d, 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -81,7 +82,8 @@ func TestMVP_05_LinkCollisionRefused(t *testing.T) {
 	privateRepo := filepath.Join(workspace, "pr")
 	consumer := filepath.Join(workspace, "consumer")
 	src := filepath.Join(privateRepo, "md-viewer")
-	for _, d := range []string{privateRepo, consumer, src} {
+	researchDir := filepath.Join(consumer, "research")
+	for _, d := range []string{privateRepo, consumer, src, researchDir} {
 		_ = os.MkdirAll(d, 0o700)
 	}
 	makeFakeRepo(t, consumer, "git@github.com:khanakia/abc.git")

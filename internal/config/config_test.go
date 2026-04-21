@@ -112,16 +112,16 @@ func TestMVP_02_Config_ValidateDefaultProfileMustExist(t *testing.T) {
 
 func TestMVP_02_Config_ValidateKey_Allowlist(t *testing.T) {
 	cases := map[string]bool{
-		"default_profile":             true,
-		"dir":                         true,
-		"scan_roots":                  true,
-		"profiles.work.dir":           true,
-		"profiles.work.scan_roots":    true,
-		"profiles.anything.dir":       true,
-		"default_profle":              false, // typo
-		"profiles.work.foo":           false, // bad leaf
-		"profiles.":                   false, // empty name
-		"":                            false,
+		"default_profile":          true,
+		"dir":                      true,
+		"scan_roots":               true,
+		"profiles.work.dir":        true,
+		"profiles.work.scan_roots": true,
+		"profiles.anything.dir":    true,
+		"default_profle":           false, // typo
+		"profiles.work.foo":        false, // bad leaf
+		"profiles.":                false, // empty name
+		"":                         false,
 	}
 	for in, wantOK := range cases {
 		_, hint, err := ValidateKey(in)

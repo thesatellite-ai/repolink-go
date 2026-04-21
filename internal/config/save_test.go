@@ -20,11 +20,11 @@ func TestMVP_02_Config_AddProfile_PreservesComments(t *testing.T) {
 
 	raw := string(c.raw)
 	for _, want := range []string{
-		"// Active profile by default.",           // comment preserved
-		"// Where the private-repo is cloned",     // comment preserved
-		`"archive"`,                               // new profile key present
-		`"/tmp/archive-repo"`,                     // new profile dir
-		`"/tmp/archive-scans"`,                    // new scan root
+		"// Active profile by default.",       // comment preserved
+		"// Where the private-repo is cloned", // comment preserved
+		`"archive"`,                           // new profile key present
+		`"/tmp/archive-repo"`,                 // new profile dir
+		`"/tmp/archive-scans"`,                // new scan root
 	} {
 		if !strings.Contains(raw, want) {
 			t.Errorf("missing %q in patched raw:\n%s", want, raw)

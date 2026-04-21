@@ -153,9 +153,9 @@ type ApplyOpts struct {
 
 // Result summarizes what Apply did (or would do).
 type Result struct {
-	Applied  []Action
-	Skipped  []Action
-	Refused  []Action // collisions / source-missing not overridden by Force
+	Applied []Action
+	Skipped []Action
+	Refused []Action // collisions / source-missing not overridden by Force
 }
 
 // Apply executes a Plan. Returns a Result describing each action's outcome.

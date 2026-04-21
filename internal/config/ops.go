@@ -69,6 +69,7 @@ func (c *Config) Set(key, value string) error {
 	if err := v.Patch([]byte(patch)); err != nil {
 		return fmt.Errorf("patch %s: %w", pointer, err)
 	}
+	v.Format()
 	c.raw = v.Pack()
 
 	// Re-parse into struct state so Get sees the update.
@@ -103,6 +104,7 @@ func (c *Config) Unset(key string) error {
 	if err := v.Patch([]byte(patch)); err != nil {
 		return fmt.Errorf("patch remove %s: %w", pointer, err)
 	}
+	v.Format()
 	c.raw = v.Pack()
 	return c.reparse()
 }
@@ -210,6 +212,7 @@ func (c *Config) RenameProfile(oldName, newName string) error {
 	if err := v.Patch([]byte(patch)); err != nil {
 		return fmt.Errorf("patch rename: %w", err)
 	}
+	v.Format()
 	c.raw = v.Pack()
 	return c.reparse()
 }
@@ -233,6 +236,7 @@ func (c *Config) replaceProfile(name string, p Profile) error {
 	if err := v.Patch([]byte(patch)); err != nil {
 		return fmt.Errorf("patch profiles/%s: %w", name, err)
 	}
+	v.Format()
 	c.raw = v.Pack()
 	return nil
 }

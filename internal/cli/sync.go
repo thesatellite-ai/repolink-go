@@ -26,9 +26,9 @@ import (
 //	repolink sync --repo <url> — sync from anywhere by explicit repo url
 //
 // Multi-source (MVP-08) works via:
-//   * `-p a,b` CLI flag                        (comma-separated profiles)
-//   * `.repolink.jsonc` in CWD                 (profile/profiles/sources)
-//   * `default_profile` in config              (single-profile default)
+//   - `-p a,b` CLI flag                        (comma-separated profiles)
+//   - `.repolink.jsonc` in CWD                 (profile/profiles/sources)
+//   - `default_profile` in config              (single-profile default)
 func newSyncCmd(a *app.App) *cobra.Command {
 	var repoURLFlag string
 
@@ -205,7 +205,8 @@ func runSync(ctx context.Context, a *app.App, opts syncOpts) error {
 		}
 	}
 
-	// One op=sync run_log per contributing profile.
+	// One op=sync run_log per contributing profile + keep the consumer
+	// .gitignore block in sync with the DB's active mappings.
 	for _, r := range resolved {
 		st, err := store.OpenDB(ctx, r.Profile.Dir)
 		if err != nil {
@@ -223,6 +224,11 @@ func runSync(ctx context.Context, a *app.App, opts syncOpts) error {
 			Message: fmt.Sprintf("repo=%s created=%d skipped=%d refused=%d paused=%d dry=%t",
 				repoURL, result.Created, result.Skipped, result.Refused, result.PausedSkipped, a.DryRun),
 		})
+		if !a.DryRun {
+			if err := syncConsumerGitignore(ctx, st, repoURL, repoRoot); err != nil {
+				fmt.Fprintf(a.Stderr, "warning: update .gitignore: %v\n", err)
+			}
+		}
 		_ = st.Close()
 	}
 

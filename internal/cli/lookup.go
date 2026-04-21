@@ -75,7 +75,16 @@ func resolveMapping(ctx context.Context, st store.Store, ident, repoURL string) 
 	case 0:
 		return store.Mapping{}, fmt.Errorf("%w: %q", ErrNoMatch, ident)
 	default:
-		return store.Mapping{}, fmt.Errorf("%w: link_name %q matches %d rows (use UUID prefix)", ErrAmbiguous, ident, len(hits))
+		var lines []string
+		for _, h := range hits {
+			tgt := h.RepoURL + "/" + h.TargetRel + "/" + h.LinkName
+			if h.TargetRel == "" {
+				tgt = h.RepoURL + "/" + h.LinkName
+			}
+			lines = append(lines, fmt.Sprintf("    %s  %-10s  %s", h.ID[:18]+"…", h.State, tgt))
+		}
+		return store.Mapping{}, fmt.Errorf("%w: link_name %q matches %d rows — re-run with one of these UUID prefixes:\n%s",
+			ErrAmbiguous, ident, len(hits), strings.Join(lines, "\n"))
 	}
 }
 

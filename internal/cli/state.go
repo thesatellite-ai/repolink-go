@@ -63,14 +63,14 @@ type stateMeta struct {
 }
 
 type stateProfile struct {
-	Name       string         `json:"name"`
-	Dir        string         `json:"dir"`
-	ScanRoots  []string       `json:"scan_roots,omitempty"`
-	Reachable  bool           `json:"reachable"`
-	Error      string         `json:"error,omitempty"`
-	Meta       *stateMeta     `json:"meta,omitempty"`
-	Mappings   []stateMapping `json:"mappings,omitempty"`
-	Counts     map[string]int `json:"counts,omitempty"` // active/paused/trashed
+	Name      string         `json:"name"`
+	Dir       string         `json:"dir"`
+	ScanRoots []string       `json:"scan_roots,omitempty"`
+	Reachable bool           `json:"reachable"`
+	Error     string         `json:"error,omitempty"`
+	Meta      *stateMeta     `json:"meta,omitempty"`
+	Mappings  []stateMapping `json:"mappings,omitempty"`
+	Counts    map[string]int `json:"counts,omitempty"` // active/paused/trashed
 }
 
 type stateResult struct {

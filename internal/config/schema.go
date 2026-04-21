@@ -1,8 +1,9 @@
 package config
 
 // Key kinds allow the CLI validator to pick the right verb:
-//   scalar → --set / --get / --unset
-//   array  → --add-<singular> / --remove-<singular>
+//
+//	scalar → --set / --get / --unset
+//	array  → --add-<singular> / --remove-<singular>
 type KeyKind int
 
 const (
@@ -23,7 +24,7 @@ type KeySpec struct {
 // --add-scan-root) is driven off this list.
 var Allowlist = []KeySpec{
 	{Path: "default_profile", Kind: ScalarKey, Type: "string"},
-	{Path: "dir", Kind: ScalarKey, Type: "string", AbsPath: true},       // shorthand → active profile
+	{Path: "dir", Kind: ScalarKey, Type: "string", AbsPath: true},         // shorthand → active profile
 	{Path: "scan_roots", Kind: ArrayKey, Type: "[]string", AbsPath: true}, // shorthand → active profile
 	{Path: "profiles.<name>.dir", Kind: ScalarKey, Type: "string", AbsPath: true},
 	{Path: "profiles.<name>.scan_roots", Kind: ArrayKey, Type: "[]string", AbsPath: true},

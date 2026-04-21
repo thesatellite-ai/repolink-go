@@ -143,17 +143,20 @@ func runMapList(ctx context.Context, a *app.App, opts mapListOpts) error {
 }
 
 // resolveStateFilter returns the list of states to pass to the Store.
-// "" defaults to "active". "all" returns nil (no filter).
+// "" defaults to "live" (active + paused) — paused rows are still claiming
+// their (repo_url,target_rel,link_name) slot so users need to see them
+// when reasoning about collisions.
+// "all" returns nil (no filter). "trashed" is an explicit opt-in.
 func resolveStateFilter(s string) ([]string, error) {
 	switch s {
-	case "":
-		return []string{"active"}, nil
+	case "", "live":
+		return []string{"active", "paused"}, nil
 	case "active", "paused", "trashed":
 		return []string{s}, nil
 	case "all":
 		return nil, nil
 	}
-	return nil, fmt.Errorf("--state %q: must be active|paused|trashed|all", s)
+	return nil, fmt.Errorf("--state %q: must be live|active|paused|trashed|all", s)
 }
 
 func renderMapList(a *app.App, r mapListResult, long bool) error {
@@ -169,13 +172,29 @@ func renderMapList(a *app.App, r mapListResult, long bool) error {
 		return nil
 	}
 	fmt.Fprintf(a.Stdout, "%s — %d mapping(s)\n", r.Profile, len(r.Rows))
+
+	// Column widths: ID width matches shortID output (18 chars + trailing ellipsis),
+	// long mode uses the full 36-char UUID.
+	idHdr, idWidth := "ID", 19
+	if long {
+		idHdr, idWidth = "ID", 36
+	}
+	fmt.Fprintf(a.Stdout, "  %-*s  %-10s  %-24s  %s\n",
+		idWidth, idHdr, "STATE", "SOURCE", "TARGET (repo/target_rel/link)")
 	for _, row := range r.Rows {
 		id := shortID(row.ID, long)
-		fmt.Fprintf(a.Stdout, "  %-8s %-10s %-35s %s/%s/%s\n",
-			id, row.State, row.SourceRel, row.RepoURL, row.TargetRel, row.LinkName)
+		target := row.RepoURL + "/" + row.TargetRel + "/" + row.LinkName
+		if row.TargetRel == "" {
+			target = row.RepoURL + "/" + row.LinkName
+		}
+		fmt.Fprintf(a.Stdout, "  %-*s  %-10s  %-24s  %s\n",
+			idWidth, id, row.State, row.SourceRel, target)
 		if long && row.Notes != "" {
-			fmt.Fprintf(a.Stdout, "           note: %s\n", row.Notes)
+			fmt.Fprintf(a.Stdout, "  %*s    note: %s\n", idWidth, "", row.Notes)
 		}
 	}
+	fmt.Fprintln(a.Stdout)
+	fmt.Fprintln(a.Stdout, "  unlink / pause / cleanup accept an ID prefix (4+ hex) or the link name")
+	fmt.Fprintln(a.Stdout, "  (link_name lookup is scoped to the current repo). Use --long for full UUIDs + notes.")
 	return nil
 }

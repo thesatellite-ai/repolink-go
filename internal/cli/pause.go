@@ -252,6 +252,15 @@ func runTransition(ctx context.Context, a *app.App, opts transitionOpts) error {
 		result.Changed++
 	}
 
+	// Reconcile consumer .gitignore — pause removes entries (active→paused),
+	// resume adds them back (paused→active). syncConsumerGitignore reads
+	// the current DB state, so it handles both directions uniformly.
+	if !a.DryRun && repoErr == nil {
+		if err := syncConsumerGitignore(ctx, st, repoURL, repoRoot); err != nil {
+			fmt.Fprintf(a.Stderr, "warning: update .gitignore: %v\n", err)
+		}
+	}
+
 	if renderErr := renderTransition(a, result); renderErr != nil {
 		return renderErr
 	}

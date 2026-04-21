@@ -5,22 +5,22 @@
 // Pin forms supported (mutually exclusive):
 //
 //  1. Legacy — profile name(s), local-only:
-//       { "profile":  "work" }
-//       { "profiles": ["work", "personal"] }
+//     { "profile":  "work" }
+//     { "profiles": ["work", "personal"] }
 //
 //  2. Portable — display_name match via repo_meta:
-//       { "sources": ["Work Notes"] }
+//     { "sources": ["Work Notes"] }
 //
 //  3. Bulletproof — UUID match (full or prefix) via repo_meta:
-//       { "sources": ["8f3a4b5c-..."] }
+//     { "sources": ["8f3a4b5c-..."] }
 //
 // Legacy and new forms cannot be mixed in one file.
 //
 // Precedence is the caller's concern: the typical flow is
 //
-//	1. --profile / -p CLI flag (overrides)
-//	2. resolver.Resolve() with the CWD's .repolink.jsonc (if any)
-//	3. fall back to config.DefaultProfile
+//  1. --profile / -p CLI flag (overrides)
+//  2. resolver.Resolve() with the CWD's .repolink.jsonc (if any)
+//  3. fall back to config.DefaultProfile
 package resolver
 
 import (

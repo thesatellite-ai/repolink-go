@@ -132,4 +132,3 @@ func (c *Config) profileNames() string {
 	}
 	return out
 }
-

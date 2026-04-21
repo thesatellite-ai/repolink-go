@@ -53,7 +53,7 @@ func TestMVP_17_VerifyDetectsMissingAndWrongTarget(t *testing.T) {
 	out, _ := runWithCapture(root, "verify", "--json")
 	var env struct {
 		Data struct {
-			Healthy int `json:"healthy"`
+			Healthy int                        `json:"healthy"`
 			Issues  []struct{ FSState string } `json:"issues"`
 		} `json:"data"`
 	}

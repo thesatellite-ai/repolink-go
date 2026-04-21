@@ -17,7 +17,9 @@ func setupLinkedRepo(t *testing.T, linkName string) (*testRoot, string) {
 	privateRepo := filepath.Join(workspace, "pr")
 	consumer := filepath.Join(workspace, "consumer")
 	src := filepath.Join(privateRepo, linkName)
-	for _, d := range []string{privateRepo, consumer, src} {
+	// Pre-create the research/ dir so `link <src> research` sees an existing
+	// dir and places the symlink inside it (matches ln -s dir-semantics).
+	for _, d := range []string{privateRepo, consumer, src, filepath.Join(consumer, "research")} {
 		_ = os.MkdirAll(d, 0o700)
 	}
 	makeFakeRepo(t, consumer, "git@github.com:khanakia/abc.git")

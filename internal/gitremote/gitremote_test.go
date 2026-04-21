@@ -8,13 +8,13 @@ import (
 
 func TestNormalizeURL(t *testing.T) {
 	cases := map[string]string{
-		"https://github.com/khanakia/abc.git":   "github.com/khanakia/abc",
-		"https://github.com/khanakia/abc":       "github.com/khanakia/abc",
-		"git@github.com:khanakia/abc.git":       "github.com/khanakia/abc",
-		"ssh://git@github.com/khanakia/abc":     "github.com/khanakia/abc",
-		"github.com/khanakia/abc":               "github.com/khanakia/abc",
-		"https://GITHUB.COM/khanakia/abc.git":   "github.com/khanakia/abc",
-		"http://gitlab.example.com/a/b.git":     "gitlab.example.com/a/b",
+		"https://github.com/khanakia/abc.git": "github.com/khanakia/abc",
+		"https://github.com/khanakia/abc":     "github.com/khanakia/abc",
+		"git@github.com:khanakia/abc.git":     "github.com/khanakia/abc",
+		"ssh://git@github.com/khanakia/abc":   "github.com/khanakia/abc",
+		"github.com/khanakia/abc":             "github.com/khanakia/abc",
+		"https://GITHUB.COM/khanakia/abc.git": "github.com/khanakia/abc",
+		"http://gitlab.example.com/a/b.git":   "gitlab.example.com/a/b",
 	}
 	for in, want := range cases {
 		got, err := NormalizeURL(in)

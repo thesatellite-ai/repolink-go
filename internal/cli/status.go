@@ -188,13 +188,19 @@ func renderStatus(a *app.App, r statusResult, long bool) error {
 		fmt.Fprintln(a.Stdout, "  no mappings")
 		return nil
 	}
+	idWidth := 19
+	if long {
+		idWidth = 36
+	}
+	fmt.Fprintf(a.Stdout, "     %-*s  %-10s  %-20s  %s\n",
+		idWidth, "ID", "STATE", "LINK", "TARGET")
 	for _, row := range r.Rows {
 		id := shortID(row.ID, long)
 		marker := fsMarker(row.FSState)
-		fmt.Fprintf(a.Stdout, "  %s %-8s %-10s %-24s %s\n",
-			marker, id, row.State, row.LinkName, row.TargetAbs)
+		fmt.Fprintf(a.Stdout, "  %s  %-*s  %-10s  %-20s  %s\n",
+			marker, idWidth, id, row.State, row.LinkName, row.TargetAbs)
 		if long && row.FSDetail != "" {
-			fmt.Fprintf(a.Stdout, "           %s\n", row.FSDetail)
+			fmt.Fprintf(a.Stdout, "     %*s    %s\n", idWidth, "", row.FSDetail)
 		}
 	}
 	return nil
@@ -212,9 +218,13 @@ func fsMarker(s string) string {
 	return "?"
 }
 
+// shortID truncates a UUID v7 for human display. Default keeps 18 hex
+// characters (including dashes) so UUIDs generated inside the same
+// millisecond — which share the 48-bit timestamp prefix — still show a
+// distinguishing random suffix. --long shows the full UUID.
 func shortID(id string, long bool) string {
-	if long || len(id) < 8 {
+	if long || len(id) < 18 {
 		return id
 	}
-	return id[:8]
+	return id[:18] + "…"
 }

@@ -115,9 +115,9 @@ func runMetaRename(ctx context.Context, a *app.App, newName string) error {
 		r := metaResult{
 			Profile: profName,
 			ID:      prev.ID, PrivateRepoID: prev.PrivateRepoID,
-			DisplayName: newName,
-			CreatedAt:   prev.CreatedAt.Format("2006-01-02 15:04:05"),
-			Renamed:     false,
+			DisplayName:  newName,
+			CreatedAt:    prev.CreatedAt.Format("2006-01-02 15:04:05"),
+			Renamed:      false,
 			PreviousName: prev.DisplayName,
 		}
 		return renderMeta(a, r)

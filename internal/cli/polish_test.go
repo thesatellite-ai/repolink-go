@@ -28,7 +28,7 @@ func setupLinkedRepoWithIdentity(t *testing.T, linkName, email, name string) (*t
 	privateRepo := filepath.Join(workspace, "pr")
 	consumer := filepath.Join(workspace, "consumer")
 	src := filepath.Join(privateRepo, linkName)
-	for _, d := range []string{privateRepo, consumer, src} {
+	for _, d := range []string{privateRepo, consumer, src, filepath.Join(consumer, "research")} {
 		_ = os.MkdirAll(d, 0o700)
 	}
 	gitDir := filepath.Join(consumer, ".git")

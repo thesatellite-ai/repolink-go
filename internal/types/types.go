@@ -142,16 +142,16 @@ func NewHostname(s string) (Hostname, error) {
 type JSONErrorCode string
 
 const (
-	ErrCollision       JSONErrorCode = "COLLISION"
-	ErrUUIDAmbiguous   JSONErrorCode = "UUID_AMBIGUOUS"
-	ErrUUIDNotFound    JSONErrorCode = "UUID_NOT_FOUND"
-	ErrConfigInvalid   JSONErrorCode = "CONFIG_INVALID"
-	ErrProfileUnknown  JSONErrorCode = "PROFILE_UNKNOWN"
-	ErrDirNotFound     JSONErrorCode = "DIR_NOT_FOUND"
-	ErrSourceMissing   JSONErrorCode = "SOURCE_MISSING"
-	ErrTargetClobber   JSONErrorCode = "TARGET_CLOBBER"
-	ErrNotASymlink     JSONErrorCode = "NOT_A_SYMLINK"
-	ErrDBLocked        JSONErrorCode = "DB_LOCKED"
-	ErrDBMigrate       JSONErrorCode = "DB_MIGRATE"
-	ErrUnknown         JSONErrorCode = "UNKNOWN"
+	ErrCollision      JSONErrorCode = "COLLISION"
+	ErrUUIDAmbiguous  JSONErrorCode = "UUID_AMBIGUOUS"
+	ErrUUIDNotFound   JSONErrorCode = "UUID_NOT_FOUND"
+	ErrConfigInvalid  JSONErrorCode = "CONFIG_INVALID"
+	ErrProfileUnknown JSONErrorCode = "PROFILE_UNKNOWN"
+	ErrDirNotFound    JSONErrorCode = "DIR_NOT_FOUND"
+	ErrSourceMissing  JSONErrorCode = "SOURCE_MISSING"
+	ErrTargetClobber  JSONErrorCode = "TARGET_CLOBBER"
+	ErrNotASymlink    JSONErrorCode = "NOT_A_SYMLINK"
+	ErrDBLocked       JSONErrorCode = "DB_LOCKED"
+	ErrDBMigrate      JSONErrorCode = "DB_MIGRATE"
+	ErrUnknown        JSONErrorCode = "UNKNOWN"
 )

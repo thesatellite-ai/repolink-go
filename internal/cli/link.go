@@ -31,8 +31,9 @@ import (
 // step fails, the DB row is deleted (soft rollback via hard delete).
 func newLinkCmd(a *app.App) *cobra.Command {
 	var (
-		notes string
-		force bool
+		notes       string
+		force       bool
+		noGitignore bool
 	)
 
 	cmd := &cobra.Command{
@@ -45,23 +46,26 @@ func newLinkCmd(a *app.App) *cobra.Command {
 				dest = args[1]
 			}
 			return runLink(cmd.Context(), a, linkOpts{
-				Src:   args[0],
-				Dest:  dest,
-				Notes: notes,
-				Force: force,
+				Src:         args[0],
+				Dest:        dest,
+				Notes:       notes,
+				Force:       force,
+				NoGitignore: noGitignore,
 			})
 		},
 	}
 	cmd.Flags().StringVar(&notes, "note", "", "optional free-form note stored on the mapping")
 	cmd.Flags().BoolVar(&force, "force", false, "clobber existing non-symlink FILE at target (refuses directories)")
+	cmd.Flags().BoolVar(&noGitignore, "no-gitignore", false, "don't update the consumer repo's .gitignore block")
 	return cmd
 }
 
 type linkOpts struct {
-	Src   string
-	Dest  string
-	Notes string
-	Force bool
+	Src         string
+	Dest        string
+	Notes       string
+	Force       bool
+	NoGitignore bool
 }
 
 type linkResult struct {
@@ -120,7 +124,7 @@ func runLink(ctx context.Context, a *app.App, opts linkOpts) error {
 		kind = "file"
 	}
 
-	targetRel, linkName, err := resolveDest(opts.Dest, sourceRel)
+	targetRel, linkName, err := resolveDest(opts.Dest, sourceRel, repoRoot)
 	if err != nil {
 		return err
 	}
@@ -186,8 +190,18 @@ func runLink(ctx context.Context, a *app.App, opts linkOpts) error {
 	if err != nil {
 		if errors.Is(err, store.ErrCollision) {
 			existing, _ := st.MappingByTarget(ctx, repoURL, targetRel, linkName)
-			return fmt.Errorf("DB collision: %s/%s/%s already claimed by mapping %s (state=%s)",
-				repoURL, targetRel, linkName, existing.ID, existing.State)
+			hint := ""
+			switch existing.State {
+			case "paused":
+				hint = fmt.Sprintf("\n  → `repolink resume %s` to reactivate, or `repolink unlink %s` then re-link",
+					existing.LinkName, existing.LinkName)
+			case "trashed":
+				hint = fmt.Sprintf("\n  → `repolink map purge %s --yes` (hard delete) then re-link", existing.ID)
+			case "active":
+				hint = fmt.Sprintf("\n  → `repolink unlink %s` first, then re-link to change source/target", existing.LinkName)
+			}
+			return fmt.Errorf("DB collision: %s/%s/%s already claimed by mapping %s (state=%s)%s",
+				repoURL, targetRel, linkName, existing.ID, existing.State, hint)
 		}
 		return fmt.Errorf("insert mapping: %w", err)
 	}
@@ -227,6 +241,13 @@ func runLink(ctx context.Context, a *app.App, opts linkOpts) error {
 		Result:    "ok",
 		Message:   fmt.Sprintf("%s → %s", sourceRel, targetAbs),
 	})
+
+	if !opts.NoGitignore {
+		// Failure here shouldn't fail the link itself — log and move on.
+		if err := syncConsumerGitignore(ctx, st, repoURL, repoRoot); err != nil {
+			fmt.Fprintf(a.Stderr, "warning: update .gitignore: %v\n", err)
+		}
+	}
 
 	return renderLink(a, linkResult{
 		MappingID: mapping.ID,
@@ -268,10 +289,22 @@ func resolveSourcePath(src, profileDir string) (string, string, error) {
 	return abs, rel, nil
 }
 
-// resolveDest splits a dest arg into (target_rel, link_name) per the
-// grammar described at the top of this file. If dest is empty, link_name
-// is basename(sourceRel) and target_rel is "".
-func resolveDest(dest, sourceRel string) (string, string, error) {
+// resolveDest splits a dest arg into (target_rel, link_name).
+//
+// Semantics match `ln -s`:
+//
+//	dest == ""                          → link_name = basename(src), target_rel = ""
+//	dest ends in "/"                    → target_rel = dest, link_name = basename(src)
+//	<repoRoot>/dest is an existing dir  → target_rel = dest, link_name = basename(src)
+//	otherwise (missing or a file)       → last segment is the link_name
+//	                                       multi-segment: target_rel = leading dirs
+//	                                       single-segment: target_rel = "" (placed at repo root)
+//
+// The existing-dir check is what prevents `link src research` from producing
+// `research/research` when `research/` already exists as a directory; it also
+// lets users pass a bare `research` (no trailing slash) to mean "filename at
+// repo root" when `research/` doesn't exist yet.
+func resolveDest(dest, sourceRel, repoRoot string) (string, string, error) {
 	if dest == "" {
 		return "", filepath.Base(sourceRel), nil
 	}
@@ -279,17 +312,17 @@ func resolveDest(dest, sourceRel string) (string, string, error) {
 	if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
 		return "", "", fmt.Errorf("dest %q: must be repo-relative (no .., no absolute)", dest)
 	}
-	// Heuristic: if dest has a trailing `/` or names an existing dir, treat it as
-	// a directory; link_name is basename(sourceRel).
-	if strings.HasSuffix(dest, string(os.PathSeparator)) || strings.HasSuffix(dest, "/") {
+	// Explicit directory intent: trailing slash.
+	if strings.HasSuffix(dest, "/") || strings.HasSuffix(dest, string(os.PathSeparator)) {
 		return clean, filepath.Base(sourceRel), nil
 	}
+	// Implicit directory intent: path exists as a real directory.
+	if fi, err := os.Stat(filepath.Join(repoRoot, clean)); err == nil && fi.IsDir() {
+		return clean, filepath.Base(sourceRel), nil
+	}
+	// Otherwise dest names the link file itself.
 	dir, base := filepath.Split(clean)
 	dir = strings.TrimRight(dir, string(os.PathSeparator))
-	if dir == "" {
-		// single segment — treat as target_rel (directory), link_name = basename(src)
-		return clean, filepath.Base(sourceRel), nil
-	}
 	return dir, base, nil
 }
 

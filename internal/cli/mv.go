@@ -77,17 +77,17 @@ type mvAction struct {
 }
 
 type mapMvResult struct {
-	Profile      string     `json:"profile"`
-	OldPrefix    string     `json:"old"`
-	NewPrefix    string     `json:"new"`
-	Exact        bool       `json:"exact"`
-	Matched      int        `json:"matched"`
-	DBUpdated    int        `json:"db_updated"`
-	FSRefreshed  int        `json:"fs_refreshed"`
-	FSNeedsSync  int        `json:"fs_needs_sync"`
-	FSRefused    int        `json:"fs_refused"`
-	DryRun       bool       `json:"dry_run"`
-	Actions      []mvAction `json:"actions"`
+	Profile     string     `json:"profile"`
+	OldPrefix   string     `json:"old"`
+	NewPrefix   string     `json:"new"`
+	Exact       bool       `json:"exact"`
+	Matched     int        `json:"matched"`
+	DBUpdated   int        `json:"db_updated"`
+	FSRefreshed int        `json:"fs_refreshed"`
+	FSNeedsSync int        `json:"fs_needs_sync"`
+	FSRefused   int        `json:"fs_refused"`
+	DryRun      bool       `json:"dry_run"`
+	Actions     []mvAction `json:"actions"`
 }
 
 func runMapMv(ctx context.Context, a *app.App, opts mapMvOpts) error {

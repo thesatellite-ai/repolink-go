@@ -29,6 +29,8 @@ func TestMVP_08_MultiSourceSync_ByDisplayName(t *testing.T) {
 	_ = os.MkdirAll(filepath.Join(prB, "tools"), 0o700)
 	consumer := filepath.Join(t.TempDir(), "consumer")
 	_ = os.MkdirAll(consumer, 0o700)
+	_ = os.MkdirAll(filepath.Join(consumer, "research"), 0o700)
+	_ = os.MkdirAll(filepath.Join(consumer, "tools"), 0o700)
 	makeFakeRepo(t, consumer, "git@github.com:khanakia/abc.git")
 
 	// Setup + rename display_names.
@@ -108,6 +110,8 @@ func TestMVP_08_MultiSourceSync_ByCommaFlag(t *testing.T) {
 	_ = os.MkdirAll(filepath.Join(prB, "y"), 0o700)
 	consumer := filepath.Join(t.TempDir(), "consumer")
 	_ = os.MkdirAll(consumer, 0o700)
+	_ = os.MkdirAll(filepath.Join(consumer, "research"), 0o700)
+	_ = os.MkdirAll(filepath.Join(consumer, "tools"), 0o700)
 	makeFakeRepo(t, consumer, "git@github.com:khanakia/abc.git")
 
 	_ = runWith(root, "setup", "--dir", prA, "--name", "a", "--make-default", "--json")
@@ -135,4 +139,3 @@ func TestMVP_08_MultiSourceSync_ByCommaFlag(t *testing.T) {
 		t.Errorf("want 2 profiles / 2 creates, got %+v", env.Data)
 	}
 }
-
