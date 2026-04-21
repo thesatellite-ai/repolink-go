@@ -1,0 +1,44 @@
+version: 2
+
+project_name: repolink
+
+builds:
+  - id: repolink
+    main: ./cmd/repolink
+    binary: repolink
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/khanakia/repolink-go/internal/app.Version={{.Version}}
+    goos:
+      # v0.1 targets macOS only per PROBLEM.md but we ship linux too for
+      # CI / container / remote-dev scenarios. Windows deferred.
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: repolink
+    formats: ["tar.gz"]
+    name_template: "repolink_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+      - docs/PROBLEM.md
+      - docs/VERIFICATION.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"

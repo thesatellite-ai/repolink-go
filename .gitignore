@@ -4,6 +4,15 @@
 /repolink
 /repolink-*
 
+# GoReleaser output
+dist/
+
+# Taskfile fingerprint cache (https://taskfile.dev/usage/#prevent-unnecessary-work)
+.task/
+
+# air live-reload working dir
+tmp/
+
 # go
 *.test
 *.out

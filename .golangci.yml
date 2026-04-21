@@ -1,0 +1,52 @@
+# golangci-lint config for repolink.
+# Run via `task lint:ci` locally or the ci.yml workflow in CI.
+# Keep this file lean — adding linters tomorrow is easy; removing them
+# without justifying noise is hard.
+
+version: "2"
+
+run:
+  timeout: 3m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    # standard correctness
+    - errcheck       # unchecked errors
+    - govet          # printf, struct tags, shadow
+    - ineffassign    # values assigned but never read
+    - staticcheck    # broad set: dead code, redundant ops, suspicious patterns
+    - unused         # unused funcs / vars / consts
+    # extras worth their weight
+    - bodyclose      # http.Response.Body never closed
+    - errorlint      # wrong error wrapping (use errors.Is / %w)
+    - gocritic       # idiomatic-Go nitpicks (sliceClone, appendCombine, …)
+    - misspell       # plain English typos in comments / strings
+    - rowserrcheck   # sql.Rows.Err() not checked after iteration
+    - sqlclosecheck  # sql.Rows / sql.Stmt not closed
+    - unconvert      # redundant type conversions
+    - wastedassign   # assigned, then immediately reassigned
+  settings:
+    errcheck:
+      # Fprint to a ResponseWriter / buffer / stdout — the error is
+      # essentially never recoverable and noise drowns real findings.
+      exclude-functions:
+        - (io.Writer).Write
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+  exclusions:
+    rules:
+      # ent-generated code lives under internal/ent/ and has its own
+      # formatting/lint conventions — let ent worry about it.
+      - path: internal/ent/
+        linters: [errcheck, govet, ineffassign, staticcheck, unused, gocritic]
+      # Tests use _ for ignored returns more freely.
+      - path: _test\.go
+        linters: [errcheck, gocritic, bodyclose, staticcheck]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

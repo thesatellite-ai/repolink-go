@@ -1,42 +1,60 @@
-# repolink-go
+# repolink
 
-Private-repo ↔ GitHub repo symlink manager. Go + Ent + SQLite. CLI-first; web UI planned post-v0.1.
+Private-repo ↔ GitHub repo symlink manager. Keep research, plans, and snippets
+in one central `private-repo/` and symlink folders into each consuming GitHub
+repo. Mappings travel with `private-repo/` via git — every machine just needs
+to know where its local clone lives.
 
-## Status
+## Install
 
-Early — `repolink version` + `repolink setup` work end-to-end.
-
-See:
-- [docs/PROBLEM.md](./docs/PROBLEM.md) — full spec (v21, 2026-04-19 locked).
-- [docs/VERIFICATION.md](./docs/VERIFICATION.md) — QA strategy / spec-to-test traceability.
-
-## Build
+macOS / Linux:
 
 ```sh
-go build -o bin/repolink ./cmd/repolink
-./bin/repolink version
-./bin/repolink version --json
+curl -sL https://raw.githubusercontent.com/khanakia/repolink-go/main/install.sh | sh
 ```
 
-## Layout
+## Quickstart
 
+```sh
+# 1. Register your private-repo clone on this machine (once):
+cd /path/to/private-repo
+repolink setup
+
+# 2. Inside any consuming repo, add a mapping:
+cd /path/to/some-github-repo
+repolink link research-folder docs
+#   → symlinks private-repo/research-folder into docs/research-folder
+#   → records the mapping in repo.db (lives inside private-repo/)
+
+# 3. On a fresh clone of the consumer repo:
+repolink          # auto-detects repo, creates every missing symlink
 ```
-cmd/repolink/         binary entrypoint
-internal/app/         DI struct (hygiene G4)
-internal/cli/         cobra commands (no ent imports — G1; no fmt.Print* in cmd_*.go — G2)
-internal/config/      JSONC config loader + schema validator (MVP-02) ✓
-internal/ent/         generated ent client + schema (MVP-03) ✓
-internal/store/       Store interface wrapping ent (G1) ✓
-internal/symlinker/   Compute → Plan → Apply engine (G3)
-internal/mcp/         MCP server (v0.2)
-internal/types/       named types + validation (MVP-01) ✓
-.verification/        spec.yaml + traceability matrix
-ci/                   hygiene scripts (G1-G5)
+
+## Everyday commands
+
+```sh
+repolink                        # sync the current repo (bare alias)
+repolink status                 # read-only view of mappings + live fs state
+repolink link <src> [dest]      # add one mapping + symlink
+repolink unlink <id|name>       # soft-delete (no fs change)
+repolink cleanup --yes          # remove fs symlinks for trashed mappings
+repolink pause <name>           # active → paused (symlink gone, row kept)
+repolink resume <name>          # paused → active (symlink back)
+repolink map list               # list mappings
+repolink map mv <old> <new>     # rename a source (prefix match by default)
+repolink verify                 # read-only drift report
+repolink meta rename "<name>"   # edit the portable display_name
+repolink config --list          # show every machine profile
+repolink state --json           # full machine-state snapshot (for scripts / AI)
 ```
 
-## Next
+Every mutating command supports `--dry-run`; every read command supports `--json`.
 
-- MVP-05: `repolink link <src> [dest]` — one-shot mapping + symlink
-- MVP-06: `repolink sync` — auto-detect, create missing symlinks, idempotent
-- `internal/symlinker`: Compute → Plan → Apply engine (G3)
-- `ci/hygiene.sh` grep gates
+## Docs
+
+- Full spec: [docs/PROBLEM.md](./docs/PROBLEM.md)
+- QA strategy: [docs/VERIFICATION.md](./docs/VERIFICATION.md)
+
+## License
+
+TBD.

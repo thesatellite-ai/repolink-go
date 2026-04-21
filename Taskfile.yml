@@ -1,0 +1,113 @@
+version: '3'
+
+# Taskfile for repolink. Install task: https://taskfile.dev
+# All targets stamp version/commit/date into internal/app.Version via
+# -ldflags so `repolink version` reports the actual build metadata.
+
+vars:
+  BIN: bin/repolink
+  PKG: ./cmd/repolink
+  VERSION_PKG: github.com/khanakia/repolink-go/internal/app
+  LDFLAGS: -X {{.VERSION_PKG}}.Version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Dev build — fast, unstripped, version/commit/date injected
+    cmds:
+      - mkdir -p bin
+      - go build -ldflags "{{.LDFLAGS}}" -o {{.BIN}} {{.PKG}}
+    sources:
+      - ./**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - '{{.BIN}}'
+
+  build:release:
+    desc: Stripped, static release binary (CGO off, -trimpath, -s -w)
+    cmds:
+      - mkdir -p bin
+      - CGO_ENABLED=0 go build -trimpath -ldflags "-s -w {{.LDFLAGS}}" -o {{.BIN}} {{.PKG}}
+      - '{{.BIN}} version'
+
+  build:all:
+    desc: Cross-compile release binaries for macOS + Linux (arm64 + amd64)
+    cmds:
+      - mkdir -p bin
+      - for: { var: TARGETS, split: ' ' }
+        cmd: |
+          IFS=/ read -r GOOS GOARCH <<< "{{.ITEM}}"
+          echo "building $GOOS/$GOARCH"
+          CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH \
+            go build -trimpath -ldflags "-s -w {{.LDFLAGS}}" \
+            -o bin/repolink-$GOOS-$GOARCH {{.PKG}}
+    vars:
+      TARGETS: darwin/arm64 darwin/amd64 linux/arm64 linux/amd64
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  test:race:
+    desc: Run tests with the race detector (slower; use before release)
+    cmds:
+      - go test -race -count=1 ./...
+
+  run:
+    desc: Build + run the binary. Pass args via CLI_ARGS="..."
+    deps: [build]
+    cmds:
+      - '{{.BIN}} {{.CLI_ARGS}}'
+
+  install:
+    desc: go install into $GOPATH/bin (with version flags)
+    cmds:
+      - go install -ldflags "{{.LDFLAGS}}" {{.PKG}}
+
+  version:
+    desc: Print the built binary's version
+    deps: [build]
+    cmds:
+      - '{{.BIN}} version'
+
+  tidy:
+    desc: go mod tidy
+    cmds:
+      - go mod tidy
+
+  generate:
+    desc: Run go generate (ent codegen, etc.)
+    cmds:
+      - go generate ./...
+
+  fmt:
+    desc: gofmt -s -w across the tree
+    cmds:
+      - gofmt -s -w .
+
+  lint:
+    desc: gofmt + go vet
+    cmds:
+      - gofmt -w .
+      - go vet ./...
+
+  lint:ci:
+    desc: Full golangci-lint run (matches CI)
+    cmds:
+      - |
+        if ! command -v golangci-lint >/dev/null 2>&1; then
+          echo "golangci-lint not found — install from https://golangci-lint.run/usage/install/"
+          exit 1
+        fi
+        golangci-lint run
+
+  clean:
+    desc: Remove build artefacts
+    cmds:
+      - rm -rf bin dist
