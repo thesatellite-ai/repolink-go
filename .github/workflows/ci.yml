@@ -1,10 +1,11 @@
 name: CI
 
+# Manual only. Previously triggered on push / PR to main — flipped to
+# workflow_dispatch so runs are intentional, not byproducts of every
+# push. Re-add the push / pull_request triggers here when the main
+# branch stabilizes and you want continuous checks again.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
