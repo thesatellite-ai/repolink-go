@@ -265,10 +265,20 @@ file if nothing else is in it).
 
 ## Install path for this skill
 
+**Via `npx skill` (recommended):**
+
 ```sh
-# Manual drop-in (Claude Code):
+SKILL_BASE_URL=https://github.com/thesatellite-ai/repolink-go/tree/main \
+  npx skill skills/repolink
+```
+
+Installs into `.codebuddy/skills/repolink/` in the current project.
+
+**Manual drop-in (Claude Code):**
+
+```sh
 mkdir -p ~/.claude/skills/repolink
-curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/skills/SKILL.md \
+curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/skills/repolink/SKILL.md \
   -o ~/.claude/skills/repolink/SKILL.md
 ```
 
