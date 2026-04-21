@@ -2,14 +2,14 @@
 # repolink installer for macOS / Linux.
 #
 # Usage:
-#   curl -sL https://raw.githubusercontent.com/khanakia/repolink-go/main/install.sh | sh
+#   curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/install.sh | sh
 #
 # Detects your OS + architecture, downloads the latest released binary
 # from GitHub Releases, and installs it to /usr/local/bin.
 
 set -e
 
-REPO="khanakia/repolink-go"
+REPO="thesatellite-ai/repolink-go"
 BINARY="repolink"
 INSTALL_DIR="/usr/local/bin"
 

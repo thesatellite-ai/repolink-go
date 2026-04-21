@@ -10,7 +10,7 @@ to know where its local clone lives.
 macOS / Linux:
 
 ```sh
-curl -sL https://raw.githubusercontent.com/khanakia/repolink-go/main/install.sh | sh
+curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/install.sh | sh
 ```
 
 ## Quickstart
