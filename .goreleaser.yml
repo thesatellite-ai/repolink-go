@@ -12,7 +12,7 @@ builds:
       - -s -w
       - -X github.com/khanakia/repolink-go/internal/app.Version={{.Version}}
     goos:
-      # v0.1 targets macOS only per PROBLEM.md but we ship linux too for
+      # v0.1 runtime targets macOS only, but we ship linux too for
       # CI / container / remote-dev scenarios. Windows deferred.
       - darwin
       - linux
@@ -27,8 +27,8 @@ archives:
     files:
       - README.md
       - LICENSE*
-      - docs/PROBLEM.md
-      - docs/VERIFICATION.md
+      - docs/USE-CASES.md
+      - docs/USAGE.md
 
 checksum:
   name_template: "checksums.txt"

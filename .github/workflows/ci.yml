@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   test:
-    # v0.1 is macOS-only per PROBLEM.md, but we compile on linux to catch
+    # v0.1 runtime is macOS-only, but we compile on linux to catch
     # portability regressions early. Tests that rely on macOS-specific
     # behavior should be tagged accordingly.
     runs-on: ubuntu-latest
