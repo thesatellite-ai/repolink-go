@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/png/icon-512.png" alt="repolink logo — a source node linked to consumer nodes" width="120" height="120">
+  <img src="brand/png/icon-512.png" alt="repolink logo — a source node linked to consumer nodes" width="60" height="60">
 </p>
 
 <h1 align="center">repolink</h1>
