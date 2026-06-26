@@ -1,0 +1,36 @@
+{
+  "name": "repolink",
+  "tagline": "One private repo, linked into every project.",
+  "description": "Keep your research, prompts, plans, snippets, and templates in one central private repo and symlink them into every GitHub project that needs them — no copy-paste, no submodules, no hand-rolled ln -s. Mappings are committed and portable via git.",
+  "repo": "thesatellite-ai/repolink-go",
+  "homepage": "",
+  "language": "go",
+  "kind": "cli",
+  "license": "Apache-2.0",
+  "author": { "name": "khanakia", "github": "khanakia" },
+  "brand": {
+    "concept": "hub+links",
+    "color": "violet",
+    "tile": ["#8B5CF6", "#6D28D9"],
+    "fg": "#FFFFFF",
+    "accent": "#FBBF24",
+    "radius": 112
+  },
+  "fonts": { "display": "Space Grotesk", "sans": "Inter", "mono": "JetBrains Mono" },
+  "topics": ["cli", "golang", "symlink", "monorepo", "developer-tools", "dotfiles", "git", "prompts", "knowledge-base", "local-first"],
+  "positioning": {
+    "category": "shared-files / symlink manager",
+    "audience": "developers who reuse research, prompts, and templates across many repos",
+    "wedge": "surface one private repo's folders inside every project without copy-paste",
+    "alternatives": ["git submodules", "copy-paste duplication", "hand-rolled ln -s", "package registries"]
+  },
+  "install": {
+    "script": "curl -sL https://raw.githubusercontent.com/thesatellite-ai/repolink-go/main/install.sh | sh",
+    "go": "go install github.com/khanakia/repolink-go/cmd/repolink@latest"
+  },
+  "khanakia": {
+    "addToApps": true,
+    "badges": ["open-source", "free", "new"],
+    "techStack": ["Go", "CLI", "SQLite"]
+  }
+}

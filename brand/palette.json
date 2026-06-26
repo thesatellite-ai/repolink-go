@@ -1,0 +1,18 @@
+{
+  "name": "repolink",
+  "tile": [
+    "#8B5CF6",
+    "#6D28D9"
+  ],
+  "accent": "#FBBF24",
+  "fg": "#FFFFFF",
+  "dark": [
+    "#5B21B6",
+    "#2E1065"
+  ],
+  "light": [
+    "#F5F3FF",
+    "#EDE9FE"
+  ],
+  "glyphAccent": "#F59E0B"
+}
